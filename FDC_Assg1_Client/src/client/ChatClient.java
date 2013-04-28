@@ -1,3 +1,8 @@
+/* Main app for the client.
+ * 
+ * Usage:
+ * 1. Launch using ChatClient() and watch the fireworks!
+ */
 package client;
 
 import java.util.Calendar;
@@ -9,15 +14,17 @@ import client.network.Communication;
 
 import components.Commands.Command;
 import components.Log;
-import components.messages.Message;
+import components.messages.ChatMessage;
 import components.texts.NoticeMessages;
 import components.texts.Status;
 
 public class ChatClient {
 
+	// Handles for the UI and network communication layers
 	private Communication comm = null;
 	private InputInterface ui = null;
 
+	// Launch the client!
 	public static void main(String args[]) {
 		// Set the logger mode
 		Log.setSilentMode();
@@ -25,6 +32,11 @@ public class ChatClient {
 		new ChatClient();
 	}
 
+	/**
+	 * Starts the chat client.
+	 * Continually asks for user input and issues the command to the server.
+	 * The results are displayed to the user.
+	 */
 	public ChatClient() {
 		Log.debug("ChatClient", "constructor", "new ChatClient started.");
 
@@ -44,7 +56,8 @@ public class ChatClient {
 		}
 	}
 
-	public short executeCommand(Command command, List<String> args) {
+	// Send the command to the communication layer to forward it to the server
+	private short executeCommand(Command command, List<String> args) {
 		Log.debug("ChatClient", "executeCommand", "executing " + command.getName());
 
 		// Create an RPC message request object
@@ -58,7 +71,9 @@ public class ChatClient {
 			return comm.getStatus();
 	}
 
+	// Take necessary action on receiving a response for the command
 	private void handleResponse(Command command) {
+		// Act based on the command issued
 		if (command.equals(Command.Connect))
 			connect();
 		else if (command.equals(Command.Disconnect))
@@ -71,30 +86,34 @@ public class ChatClient {
 			inquire();
 	}
 
+	// Tell the user they got connected
 	private void connect() {
 		ui.display(NoticeMessages.CLIENT_CONNECTED);
 		// Display client ID
 		ui.display(NoticeMessages.CLIENT_ID_GENERATED + comm.getClientID());
 	}
 
+	// Tell the user they got disconnected
 	private void disconnect() {
 		ui.display(NoticeMessages.CLIENT_DISCONNECTED);
 	}
 
+	// Tell the user their message was deposited
 	private void deposit() {
 		ui.display(NoticeMessages.DEPOSIT_SUCCESS);
 	}
 
+	// Show the user all the messages they have received
 	private void retrieve() {
 		ui.display(NoticeMessages.RETRIEVE_SUCCESS);
 		// Extract messages
-		List<Message> messages = comm.getChatMessages();
+		List<ChatMessage> messages = comm.getChatMessages();
 		if (messages != null) {
 			// Did we get any messages?
 			if (messages.size() > 0) {
 				// Yes!
 				Calendar currentTime = Calendar.getInstance();
-				for (Message message : messages) {
+				for (ChatMessage message : messages) {
 					// Print the message details
 					StringBuilder messageToDisplay = new StringBuilder();
 					messageToDisplay.append("New message received: " + "\n\tFrom: " + message.getSenderID()
@@ -135,11 +154,11 @@ public class ChatClient {
 			ui.display(NoticeMessages.RETRIEVE_FAILED);
 	}
 
+	// Tell the user about their inquiry
 	private void inquire() {
 		if (comm.isUserOnline())
 			ui.display(NoticeMessages.INQUIRE_SUCCESS);
 		else
 			ui.display(NoticeMessages.INQUIRE_FAILURE);
 	}
-
 }

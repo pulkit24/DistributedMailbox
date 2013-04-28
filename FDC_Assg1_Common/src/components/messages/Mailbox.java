@@ -8,7 +8,7 @@
  * 3. Retrieve messages by using:
  * 		3.1 getMessageById(...) to fetch a known message.
  * 		3.2 getMessagesBySender(...) to get all messages sent by a particular user.
- * 		3.3 getMessagesByRecipient(...) to get all messages set to be recieved by a particular user.
+ * 		3.3 getMessagesByRecipient(...) to get all messages set to be received by a particular user.
  * In all cases, you can set removeFromMailbox = true to delete the messages after retrieval.
  */
 package components.messages;
@@ -20,17 +20,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Mailbox {
 	// Store for the messages
-	private Map<Long, Message> messages;
+	private Map<Long, ChatMessage> messages;
 
 	// Singleton instance of the mailbox
 	private static Mailbox instance = null;
 
-	// Key for synchronized access (can't use 'messages' itself, could be null)
-	// private Object synchronousAccessKey = new Object();
-
 	// Initialize the mailbox object
 	private Mailbox() {
-		messages = new ConcurrentHashMap<Long, Message>();
+		// Use concurrent hash map for inbuilt concurrency measures
+		messages = new ConcurrentHashMap<Long, ChatMessage>();
 	}
 
 	/**
@@ -49,9 +47,9 @@ public class Mailbox {
 	 * Insert a message into the mailbox.
 	 * 
 	 * @param message
-	 *            The Message object to be inserted.
+	 *            The ChatMessage object to be inserted.
 	 */
-	public void addMessage(Message message) {
+	public void addMessage(ChatMessage message) {
 		messages.put(new Long(message.getID()), message);
 	}
 
@@ -63,10 +61,10 @@ public class Mailbox {
 	 *            The unique ID for the message.
 	 * @param removeFromMailbox
 	 *            If true, the message is removed from the mailbox.
-	 * @return The Message object representing the message and all associated details.
+	 * @return The ChatMessage object representing the message and all associated details.
 	 */
-	public Message getMessageById(long messageID, boolean removeFromMailbox) {
-		Message message = null;
+	public ChatMessage getMessageById(long messageID, boolean removeFromMailbox) {
+		ChatMessage message = null;
 		message = messages.get(new Long(messageID));
 		if (removeFromMailbox)
 			removeMessage(messageID);
@@ -83,11 +81,11 @@ public class Mailbox {
 	 *            If true, the matching messages are removed from the mailbox.
 	 * @return A list of messages that were sent by the specified sender.
 	 */
-	public List<Message> getMessagesBySender(long senderID,
+	public List<ChatMessage> getMessagesBySender(long senderID,
 			boolean removeFromMailbox) {
-		List<Message> filteredMessages = new ArrayList<Message>();
+		List<ChatMessage> filteredMessages = new ArrayList<ChatMessage>();
 
-		for (Message message : messages.values()) {
+		for (ChatMessage message : messages.values()) {
 			if (message.getSenderID() == senderID) {
 				filteredMessages.add(message);
 				if (removeFromMailbox)
@@ -107,10 +105,10 @@ public class Mailbox {
 	 *            If true, the matching messages are removed from the mailbox.
 	 * @return A list of messages whose intended recipient is the specified recipient.
 	 */
-	public List<Message> getMessagesByRecipient(long recipientID,
+	public List<ChatMessage> getMessagesByRecipient(long recipientID,
 			boolean removeFromMailbox) {
-		List<Message> filteredMessages = new ArrayList<Message>();
-		for (Message message : messages.values()) {
+		List<ChatMessage> filteredMessages = new ArrayList<ChatMessage>();
+		for (ChatMessage message : messages.values()) {
 			if (message.getRecipientID() == recipientID) {
 				filteredMessages.add(message);
 				if (removeFromMailbox)

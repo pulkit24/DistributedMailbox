@@ -7,11 +7,11 @@ import java.util.List;
 import components.CSVUtility;
 import components.IDGenerator;
 import components.Log;
-import components.communication.Marshaller;
 import components.communication.RPCMessage;
 import components.communication.ServerInterface;
+import components.communication.marshalling.SimpleMarshaller;
 import components.messages.Mailbox;
-import components.messages.Message;
+import components.messages.ChatMessage;
 import components.texts.Status;
 
 public class Server implements ServerInterface {
@@ -79,7 +79,7 @@ public class Server implements ServerInterface {
 		long senderID = Long.parseLong(data.get(0));
 		long recipientID = Long.parseLong(data.get(1));
 		String content = data.get(2);
-		Message message = new Message(IDGenerator.NULL_ID, senderID, recipientID, content, null);
+		ChatMessage message = new ChatMessage(IDGenerator.NULL_ID, senderID, recipientID, content, null);
 
 		// Check if the sender is currently connected
 		if (isConnected(message.getSenderID())) {
@@ -108,10 +108,10 @@ public class Server implements ServerInterface {
 		if (isConnected(clientID)) {
 
 			// Get all waiting messages for this client from the mailbox
-			List<Message> messages = Mailbox.getInstance().getMessagesByRecipient(clientID, true);
+			List<ChatMessage> messages = Mailbox.getInstance().getMessagesByRecipient(clientID, true);
 
 			// TODO marshal
-			String marshalledData = Marshaller.marshall(messages);
+			String marshalledData = SimpleMarshaller.marshallToString(messages);
 			if(marshalledData!=null)
 				return request.createResponse(marshalledData, Status.SUCCESS);
 			else

@@ -1,7 +1,7 @@
 /* Represents a chat message with all the relevant details associated.
  * 
  * Usage:
- * 1. Store a message by creating a Message object.
+ * 1. Store a message by creating a ChatMessage object.
  * 2. You can only override the ID and receive date, since they are likely to be set by the recipient.
  * 3. Get message details using the various getters.
  */
@@ -13,7 +13,7 @@ import java.util.Calendar;
 
 import components.IDGenerator;
 
-public class Message implements Serializable {
+public class ChatMessage implements Serializable {
 	private static final long serialVersionUID = -8701290828758468158L;
 	
 	private long id;
@@ -23,7 +23,7 @@ public class Message implements Serializable {
 	private Calendar receiveDate;
 
 	/**
-	 * Constructs a Message object.
+	 * Constructs a ChatMessage object.
 	 * 
 	 * @param id
 	 *            A unique id to refer to the message.
@@ -38,7 +38,7 @@ public class Message implements Serializable {
 	 * @param receiveDate
 	 *            The date and time at the point of reception.
 	 */
-	public Message(long id, long senderID, long recipientID, String message, Calendar receiveDate) {
+	public ChatMessage(long id, long senderID, long recipientID, String message, Calendar receiveDate) {
 		this.id = id;
 		this.senderID = senderID;
 		this.recipientID = recipientID;
@@ -94,7 +94,7 @@ public class Message implements Serializable {
 	}
 
 	/**
-	 * Returns the date and time when the message was recieved.
+	 * Returns the date and time when the message was received.
 	 * 
 	 * @return A calendar object set to the correct date and time when the message was received.
 	 */
@@ -103,7 +103,7 @@ public class Message implements Serializable {
 	}
 
 	/**
-	 * Updates the date and time when the message was recieved.
+	 * Updates the date and time when the message was received.
 	 * 
 	 * @param receiveDate
 	 *            A calendar object set to the correct date and time when the message was received.

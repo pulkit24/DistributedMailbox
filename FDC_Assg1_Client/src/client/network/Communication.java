@@ -1,3 +1,11 @@
+/* Communication layer for the client.
+ * Abstracts the method of calling server functions.
+ * 
+ * Usage:
+ * 1. Send a command using sendOperation(...)
+ * 2. Use the various getter functions to get the results from the response.
+ * Note: Only use a function when you are sure that is the result of the operation.
+ */
 package client.network;
 
 import java.util.List;
@@ -7,9 +15,9 @@ import server.Server;
 import components.CSVUtility;
 import components.Commands.Command;
 import components.IDGenerator;
-import components.communication.Marshaller;
 import components.communication.RPCMessage;
-import components.messages.Message;
+import components.communication.marshalling.SimpleMarshaller;
+import components.messages.ChatMessage;
 import components.texts.Status;
 
 public class Communication {
@@ -98,21 +106,27 @@ public class Communication {
 	 * Returns a list of messages for the client retrieved from the server.
 	 * Note: Only use this when you are sure this is the result of the operation.
 	 * 
-	 * @return A list of Message objects.
+	 * @return A list of Chat Message objects.
 	 */
 	@SuppressWarnings("unchecked")
-	public List<Message> getChatMessages() {
+	public List<ChatMessage> getChatMessages() {
 		// Get the CSV data
 		String responseData = response.getCsv_data();
 
 		// TODO unmarshall
-		Object unmarshalledData = Marshaller.unmarshall(responseData);
+		Object unmarshalledData = SimpleMarshaller.unmarshallString(responseData);
 		if (unmarshalledData != null)
-			return (List<Message>) unmarshalledData;
+			return (List<ChatMessage>) unmarshalledData;
 		else
 			return null;
 	}
 
+	/**
+	 * Check whether the inquired user is currently online.
+	 * Note: Only use this when you are sure this is the result of the operation.
+	 * 
+	 * @return True if the user is connected to the server.
+	 */
 	public boolean isUserOnline() {
 		return Boolean.parseBoolean(response.getCsv_data());
 	}
