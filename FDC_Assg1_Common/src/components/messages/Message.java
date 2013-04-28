@@ -7,15 +7,18 @@
  */
 package components.messages;
 
+import java.io.Serializable;
 import java.text.DateFormat;
 import java.util.Calendar;
 
 import components.IDGenerator;
 
-public class Message {
-	private int id;
-	private int senderID;
-	private int recipientID;
+public class Message implements Serializable {
+	private static final long serialVersionUID = -8701290828758468158L;
+	
+	private long id;
+	private long senderID;
+	private long recipientID;
 	private String message;
 	private Calendar receiveDate;
 
@@ -35,7 +38,7 @@ public class Message {
 	 * @param receiveDate
 	 *            The date and time at the point of reception.
 	 */
-	public Message(int id, int senderID, int recipientID, String message, Calendar receiveDate) {
+	public Message(long id, long senderID, long recipientID, String message, Calendar receiveDate) {
 		this.id = id;
 		this.senderID = senderID;
 		this.recipientID = recipientID;
@@ -48,7 +51,7 @@ public class Message {
 	 * 
 	 * @return Assigned message id.
 	 */
-	public int getID() {
+	public long getID() {
 		return id;
 	}
 
@@ -59,7 +62,7 @@ public class Message {
 	 * @param id
 	 *            ID to be assigned to the message.
 	 */
-	public void setID(int id) {
+	public void setID(long id) {
 		this.id = id;
 	}
 
@@ -68,7 +71,7 @@ public class Message {
 	 * 
 	 * @return The client ID of the sender.
 	 */
-	public int getSenderID() {
+	public long getSenderID() {
 		return senderID;
 	}
 
@@ -77,7 +80,7 @@ public class Message {
 	 * 
 	 * @return The client ID of the recipient.
 	 */
-	public int getRecipientID() {
+	public long getRecipientID() {
 		return recipientID;
 	}
 

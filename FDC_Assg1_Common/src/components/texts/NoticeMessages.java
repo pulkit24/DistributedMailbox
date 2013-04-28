@@ -12,7 +12,8 @@ public class NoticeMessages {
 	public static final String DEPOSIT_SUCCESS = "Message saved.";
 	public static final String DEPOSIT_FAILURE = "Message could not be saved.";
 	public static final String RETRIEVE_SUCCESS = "Messages retrieved.";
-	public static final String RETRIEVE_FAILURE = "No messages for you.";
+	public static final String RETRIEVE_EMPTY = "No messages for you.";
+	public static final String RETRIEVE_FAILED = "System error: the messages were corrupted.";
 	
 	// Inquire
 	public static final String INQUIRE_SUCCESS = "The user is currently connected.";

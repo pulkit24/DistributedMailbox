@@ -4,15 +4,19 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import components.ChatInterface;
+import components.CSVUtility;
 import components.IDGenerator;
+import components.Log;
+import components.communication.Marshaller;
+import components.communication.RPCMessage;
+import components.communication.ServerInterface;
 import components.messages.Mailbox;
 import components.messages.Message;
-import components.texts.ErrorMessages;
+import components.texts.Status;
 
-public class Server implements ChatInterface {
+public class Server implements ServerInterface {
 
-	private List<Integer> connectedClients = null;
+	private List<Long> connectedClients = null;
 	private static Server instance = null;
 
 	public static void main(String args[]) {
@@ -28,75 +32,110 @@ public class Server implements ChatInterface {
 
 	private Server() {
 		// Initialize the list of clients
-		connectedClients = new ArrayList<Integer>();
+		connectedClients = new ArrayList<Long>();
 	}
 
-	private boolean isConnected(int clientID) {
+	private boolean isConnected(long clientID) {
 		// Check if the client is currently connected to the system
-		return connectedClients.contains(new Integer(clientID));
+		return connectedClients.contains(new Long(clientID));
 	}
 
 	@Override
-	public int connect() {
+	public RPCMessage connect(RPCMessage request) {
 		// Generate a unique ID for the client
-		int clientID = IDGenerator.generateClientID();
+		long clientID = IDGenerator.getNextInSequence("client");
 		// Add the client to the list of connected clients
-		connectedClients.add(new Integer(clientID));
+		connectedClients.add(new Long(clientID));
 		// Return the generated client ID to the client
-		return clientID;
+		RPCMessage response = request.createResponse("" + clientID, Status.SUCCESS);
+
+		Log.debug("Server", "connect", "Generated client ID: " + clientID);
+		return response;
 	}
 
 	@Override
-	public void disconnect(int clientID) throws IllegalAccessException {
+	public RPCMessage disconnect(RPCMessage request) {
+		// Extract the client ID
+		long clientID = Long.parseLong(CSVUtility.fromCSV(request.getCsv_data()).get(0));
+
 		// Check if the client is currently connected
-		if (isConnected(clientID))
+		if (isConnected(clientID)) {
+
 			// Remove the client from the list of connected clients
-			connectedClients.remove(new Integer(clientID));
-		else
-			// Else raise an error
-			throw new IllegalAccessException(ErrorMessages.INVALID_CLIENT);
+			connectedClients.remove(new Long(clientID));
+
+			Log.debug("Server", "disconnect", "Client disconnected");
+			return request.createResponse("", Status.SUCCESS);
+
+		} else
+			// Else return an error
+			return request.createResponse("", Status.INVALID_CLIENT);
 	}
 
 	@Override
-	public void deposit(Message message) throws IllegalAccessException {
+	public RPCMessage deposit(RPCMessage request) {
+		// Extract the message info
+		List<String> data = CSVUtility.fromCSV(request.getCsv_data());
+		long senderID = Long.parseLong(data.get(0));
+		long recipientID = Long.parseLong(data.get(1));
+		String content = data.get(2);
+		Message message = new Message(IDGenerator.NULL_ID, senderID, recipientID, content, null);
+
 		// Check if the sender is currently connected
-		if (isConnected(message.getSenderID()))
-			// Check if the recipient is currently connected
-			if (isConnected(message.getRecipientID())) {
-				// Set an ID and the receive date for the message
-				message.setID(IDGenerator.generateMessageID());
-				message.setReceiveDate(Calendar.getInstance());
-				// Add the mail to the mailbox
-				Mailbox.getInstance().addMessage(message);
-			} else
-				// Else raise an error about invalid recipient
-				throw new IllegalAccessException(
-						ErrorMessages.INVALID_RECIPIENT);
-		else
-			// Else raise an error about invalid sender
-			throw new IllegalAccessException(ErrorMessages.INVALID_SENDER);
+		if (isConnected(message.getSenderID())) {
+
+			// Set an ID and the receive date for the message
+			message.setID(IDGenerator.getNextInSequence("message"));
+			message.setReceiveDate(Calendar.getInstance());
+
+			// Add the mail to the mailbox
+			Mailbox.getInstance().addMessage(message);
+
+			Log.debug("Server", "deposit", "Message stored");
+			return request.createResponse("", Status.SUCCESS);
+
+		} else
+			// Else return an error about invalid sender
+			return request.createResponse("", Status.INVALID_SENDER);
 	}
 
 	@Override
-	public List<Message> retrieve(int clientID) throws IllegalAccessException {
+	public RPCMessage retrieve(RPCMessage request) {
+		// Extract the client ID
+		long clientID = Long.parseLong(CSVUtility.fromCSV(request.getCsv_data()).get(0));
+
 		// Check if the client is currently connected
-		if (isConnected(clientID))
+		if (isConnected(clientID)) {
+
 			// Get all waiting messages for this client from the mailbox
-			return Mailbox.getInstance().getMessagesByRecipient(clientID, true);
-		else
-			// Else raise an error
-			throw new IllegalAccessException(ErrorMessages.INVALID_CLIENT);
+			List<Message> messages = Mailbox.getInstance().getMessagesByRecipient(clientID, true);
+
+			// TODO marshal
+			String marshalledData = Marshaller.marshall(messages);
+			if(marshalledData!=null)
+				return request.createResponse(marshalledData, Status.SUCCESS);
+			else
+				return request.createResponse("", Status.MARSHAL_FAILED);
+			
+		} else
+			// Else return an error
+			return request.createResponse("", Status.INVALID_CLIENT);
 	}
 
 	@Override
-	public boolean inquire(int clientID, int userID)
-			throws IllegalAccessException {
+	public RPCMessage inquire(RPCMessage request) {
+		// Extract the client and user IDs
+		List<String> data = CSVUtility.fromCSV(request.getCsv_data());
+		long clientID = Long.parseLong(data.get(0));
+		long userID = Long.parseLong(data.get(1));
+
 		// Check if the client is connected
-		if (isConnected(clientID))
+		if (isConnected(clientID)) {
 			// Return true if the required user is connected, false if not
-			return isConnected(userID);
-		else
-			// Else raise an error
-			throw new IllegalAccessException(ErrorMessages.INVALID_CLIENT);
+			Log.debug("Server", "inquire", "User is connected");
+			return request.createResponse("" + isConnected(userID), Status.SUCCESS);
+		} else
+			// Else return an error
+			return request.createResponse("", Status.INVALID_CLIENT);
 	}
 }

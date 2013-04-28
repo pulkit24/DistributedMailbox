@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Mailbox {
 	// Store for the messages
-	private Map<Integer, Message> messages;
+	private Map<Long, Message> messages;
 
 	// Singleton instance of the mailbox
 	private static Mailbox instance = null;
@@ -30,7 +30,7 @@ public class Mailbox {
 
 	// Initialize the mailbox object
 	private Mailbox() {
-		messages = new ConcurrentHashMap<Integer, Message>();
+		messages = new ConcurrentHashMap<Long, Message>();
 	}
 
 	/**
@@ -52,7 +52,7 @@ public class Mailbox {
 	 *            The Message object to be inserted.
 	 */
 	public void addMessage(Message message) {
-		messages.put(new Integer(message.getID()), message);
+		messages.put(new Long(message.getID()), message);
 	}
 
 	/**
@@ -65,9 +65,9 @@ public class Mailbox {
 	 *            If true, the message is removed from the mailbox.
 	 * @return The Message object representing the message and all associated details.
 	 */
-	public Message getMessageById(int messageID, boolean removeFromMailbox) {
+	public Message getMessageById(long messageID, boolean removeFromMailbox) {
 		Message message = null;
-		message = messages.get(new Integer(messageID));
+		message = messages.get(new Long(messageID));
 		if (removeFromMailbox)
 			removeMessage(messageID);
 		return message;
@@ -83,7 +83,7 @@ public class Mailbox {
 	 *            If true, the matching messages are removed from the mailbox.
 	 * @return A list of messages that were sent by the specified sender.
 	 */
-	public List<Message> getMessagesBySender(int senderID,
+	public List<Message> getMessagesBySender(long senderID,
 			boolean removeFromMailbox) {
 		List<Message> filteredMessages = new ArrayList<Message>();
 
@@ -107,7 +107,7 @@ public class Mailbox {
 	 *            If true, the matching messages are removed from the mailbox.
 	 * @return A list of messages whose intended recipient is the specified recipient.
 	 */
-	public List<Message> getMessagesByRecipient(int recipientID,
+	public List<Message> getMessagesByRecipient(long recipientID,
 			boolean removeFromMailbox) {
 		List<Message> filteredMessages = new ArrayList<Message>();
 		for (Message message : messages.values()) {
@@ -121,8 +121,8 @@ public class Mailbox {
 	}
 
 	// Removes the message from the mailbox.
-	private boolean removeMessage(int messageID) {
-		Integer messageIDAsObject = new Integer(messageID);
+	private boolean removeMessage(long messageID) {
+		Long messageIDAsObject = new Long(messageID);
 		if (messages.containsKey(messageIDAsObject)) {
 			messages.remove(messageIDAsObject);
 			return true;

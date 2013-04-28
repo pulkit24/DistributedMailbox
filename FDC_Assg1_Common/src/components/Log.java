@@ -65,12 +65,16 @@ public class Log {
 	 *            Identify the context (eg. the current function). Only displayed if verbosity is high.
 	 * @param message
 	 *            Descriptive message for the error.
+	 * @param exception
+	 *            Actual exception, if any, for showing stack trace. Only displayed if verbosity is high.
 	 */
-	public static void error(String caller, String context, String message) {
+	public static void error(String caller, String context, String message, Exception exception) {
 		if (LEVEL.compareTo(Level.Error) > 0) {
 			if (VERBOSE.equals(Verbosity.High))
 				System.out.print(caller + "." + context + "\t");
 			System.out.println("Error: " + message);
+			if (VERBOSE.equals(Verbosity.High) && exception!=null)
+				System.err.println(exception.toString());
 		}
 	}
 

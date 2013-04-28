@@ -15,14 +15,13 @@ public class Commands {
 
 	// All supported commands and their names as text
 	public static enum Command {
-		Connect(1, "connect", 0), Disconnect(2, "disconnect", 1), Deposit(3,
-				"deposit", 3), Retrieve(4, "retrieve", 1), Inquire(5,
-				"inquire", 2);
-		private int id;
+		Connect((short) 1, "connect", 0), Disconnect((short) 2, "disconnect", 1), Deposit((short) 3, "deposit", 3), Retrieve(
+				(short) 4, "retrieve", 1), Inquire((short) 5, "inquire", 2);
+		private short id;
 		private String name;
 		private int argumentCount;
 
-		private Command(int id, String name, int argumentCount) {
+		private Command(short id, String name, int argumentCount) {
 			this.id = id;
 			this.name = name;
 			this.argumentCount = argumentCount;
@@ -35,7 +34,7 @@ public class Commands {
 		 *            The command in question.
 		 * @return The ID of the command.
 		 */
-		public int getID() {
+		public short getID() {
 			return id;
 		}
 
@@ -64,18 +63,19 @@ public class Commands {
 	};
 
 	/**
-	 * Returns the ID of the command for reference.
+	 * Returns the command for the supplied ID.
+	 * Useful for obtaining the command object based on a user-supplied ID.
 	 * 
-	 * @param command
-	 *            The command issued.
-	 * @return The command's unique ID, or NULL_ID if the command is illegal.
-	 * @see IDGenerator
+	 * @param id
+	 *            The ID of the command.
+	 * @return The corresponding Command object, or null if none is found.
 	 */
-	public static int getCommandID(Command command) {
-		if (command != null)
-			return command.getID();
-		else
-			return IDGenerator.NULL_ID;
+	public static Command getCommandByID(short id) {
+		if (id != IDGenerator.NULL_ID)
+			for (Command command : Command.values())
+				if (id == command.getID())
+					return command;
+		return null;
 	}
 
 	/**
