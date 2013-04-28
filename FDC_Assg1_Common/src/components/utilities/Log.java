@@ -12,12 +12,8 @@
  * 		2.1 Log.debug(...) for logging a debug message.
  * 		2.2 Log.error(...) for logging an error message.
  */
-package components;
+package components.utilities;
 
-/**
- * @author pulkit
- * 
- */
 public class Log {
 
 	// All supported debug levels

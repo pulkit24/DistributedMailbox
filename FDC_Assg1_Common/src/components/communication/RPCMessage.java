@@ -4,14 +4,21 @@
  * 1. Create a request packet using RPCMessage(...)
  * 2. Create a response packet based on the request using createResponse(...)
  * 3. Get all contained information using the various getters.
+ * 4. Validate the requests and replies at various stages using:
+ * 		4.1 validateRequest() on the server side.
+ * 		4.2 validateResponse(...) on the client side.
+ * 		4.3 validateProcedure(...) on either side, before beginning any operation.
  */
 package components.communication;
 
 import java.io.Serializable;
 
-import components.CSVUtility;
-import components.IDGenerator;
-import components.texts.Status;
+import components.Commands;
+import components.Commands.Command;
+import components.notices.Status;
+import components.utilities.CSVUtility;
+import components.utilities.IDGenerator;
+import components.utilities.Log;
 
 public class RPCMessage implements Serializable {
 	private static final long serialVersionUID = 6307407935412844886L;
@@ -157,5 +164,91 @@ public class RPCMessage implements Serializable {
 	 */
 	public short getStatus() {
 		return status;
+	}
+
+	/**
+	 * Check if the packet is marked as request by type.
+	 * Useful at the server side to validate incoming requests.
+	 * 
+	 * @return True if the packet is explicitly typed as a request.
+	 */
+	public boolean validateRequest() {
+		Log.debug("RPCMessage", "validateRequest", "request has type " + messageType + " and should be "
+				+ MessageType.REQUEST);
+		return messageType == MessageType.REQUEST;
+	}
+
+	/**
+	 * Check if the packet is marked as response,
+	 * and all the identifiers are correct as expected.
+	 * Useful at the client side to validate incoming responses.
+	 * 
+	 * @param request
+	 *            The original request packet sent by the client.
+	 * @return True if the packet is explicitly typed as a reply,
+	 *         and if the transaction, RPC, request and procedure IDs
+	 *         are the same as those in the original request packet.
+	 */
+	public boolean validateResponse(RPCMessage request) {
+		boolean isValid = true;
+
+		// Step 1: check if the response is correctly typed
+		isValid = isValid && (messageType == MessageType.REPLY);
+		Log.debug("RPCMessage", "validateResponse", "request has type " + messageType + ", should be "
+				+ MessageType.REPLY);
+
+		// Step 2: check if the transaction ID is the same as that in the request
+		isValid = isValid && (transactionID == request.getTransactionID());
+		Log.debug("RPCMessage", "validateResponse",
+				"transaction ID is " + transactionID + ", should be " + request.getTransactionID());
+
+		// Step 3: check if the RPC ID is the same as that in the request
+		isValid = isValid && (RPCId == request.getRPCId());
+		Log.debug("RPCMessage", "validateResponse", "RPC ID is " + RPCId + ", should be " + request.getRPCId());
+
+		// Step 4: check if the request ID in the response is the same as that in the request
+		isValid = isValid && (requestID == request.getRequestID());
+		Log.debug("RPCMessage", "validateResponse",
+				"Request ID is " + requestID + ", should be " + request.getRequestID());
+
+		// Step 5: check if the procedure ID is the same as that in the request
+		isValid = isValid && (procedureID == request.getProcedureID());
+		Log.debug("RPCMessage", "validateResponse",
+				"Procedure ID is " + procedureID + ", should be " + request.getProcedureID());
+
+		return isValid;
+	}
+
+	/**
+	 * Check if the procedure suggested in the packet is the one
+	 * that is intended.
+	 * Use this function before processing each particular operation.
+	 * 
+	 * @param expectedCommand
+	 *            The Command for the procedure that is currently expected.
+	 * @return True if the packet is intended for the expected procedure.
+	 */
+	public boolean validateProcedure(Command expectedCommand) {
+		Log.debug("RPCMessage", "validateProcedure", "expected: " + expectedCommand.getID() + " response: "
+				+ procedureID);
+		return procedureID == expectedCommand.getID();
+	}
+
+	public String toString() {
+		StringBuilder prettyPrint = new StringBuilder();
+		
+		if (messageType == MessageType.REQUEST)
+			prettyPrint.append("REQUEST ");
+		else if (messageType == MessageType.REPLY)
+			prettyPrint.append("RESPONSE ");
+		
+		prettyPrint.append(" Transaction " + transactionID);
+		prettyPrint.append(" RPC ID " + RPCId);
+		prettyPrint.append(" Request ID " + requestID);
+		prettyPrint.append(" Procedure " + procedureID);
+		prettyPrint.append(" CSV Data " + csv_data);
+		prettyPrint.append(" Status " + status);
+		
+		return prettyPrint.toString();
 	}
 }

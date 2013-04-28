@@ -8,10 +8,11 @@
  * 2. To convert a CSV string back into a list, use fromCSV(...)
  * It is up to the programmer to convert the strings into the necessary data types.
  */
-package components;
+package components.utilities;
 
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class CSVUtility {
 

@@ -20,7 +20,7 @@ import java.io.ObjectOutputStream;
 
 import org.apache.commons.codec.binary.Base64;
 
-import components.Log;
+import components.utilities.Log;
 
 public class SimpleMarshaller {
 

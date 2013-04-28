@@ -8,7 +8,7 @@ import java.util.List;
 
 import components.Commands;
 import components.Commands.Command;
-import components.Log;
+import components.utilities.Log;
 
 public class UserInput implements InputInterface {
 

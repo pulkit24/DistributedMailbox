@@ -11,12 +11,15 @@
  */
 package components;
 
+import components.utilities.IDGenerator;
+
 public class Commands {
 
 	// All supported commands and their names as text
 	public static enum Command {
 		Connect((short) 1, "connect", 0), Disconnect((short) 2, "disconnect", 1), Deposit((short) 3, "deposit", 3), Retrieve(
-				(short) 4, "retrieve", 1), Inquire((short) 5, "inquire", 2);
+				(short) 4, "retrieve", 1), Inquire((short) 5, "inquire", 2), Exit((short) 6, "exit", 0), Quit(
+				(short) 7, "quit", 0);
 		private short id;
 		private String name;
 		private int argumentCount;

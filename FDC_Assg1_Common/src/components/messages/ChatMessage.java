@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.util.Calendar;
 
-import components.IDGenerator;
+import components.utilities.IDGenerator;
 
 public class ChatMessage implements Serializable {
 	private static final long serialVersionUID = -8701290828758468158L;

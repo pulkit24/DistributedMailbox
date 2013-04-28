@@ -2,28 +2,81 @@
  * Abstracts the method of calling server functions.
  * 
  * Usage:
- * 1. Send a command using sendOperation(...)
- * 2. Use the various getter functions to get the results from the response.
+ * 1. Establish connection to the server by creating a new Communication object.
+ * 2. Check if the connection is active and usable using isActive()
+ * 3. Send a command using sendOperation(...)
+ * 4. Use the various getter functions to get the results from the response.
  * Note: Only use a function when you are sure that is the result of the operation.
  */
 package client.network;
 
+import java.rmi.AccessException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.List;
 
-import server.Server;
+import client.input.UserInput;
 
-import components.CSVUtility;
 import components.Commands.Command;
-import components.IDGenerator;
 import components.communication.RPCMessage;
+import components.communication.ServerInterface;
 import components.communication.marshalling.SimpleMarshaller;
 import components.messages.ChatMessage;
-import components.texts.Status;
+import components.notices.Status;
+import components.utilities.CSVUtility;
+import components.utilities.IDGenerator;
+import components.utilities.Log;
 
 public class Communication {
 
+	// Flag for active connection
+	private boolean isActive = false;
+
+	// Handle for the server
+	private ServerInterface server = null;
+
+	// Handle for the ID generator
+	private IDGenerator idGenerator = null;
+
 	// Stores the response for further scrutiny by the client
 	private RPCMessage response = null;
+
+	/**
+	 * Initializes the communication layer by establishing a connection to the server.
+	 */
+	public Communication(String serverAddress, int serverPort) {
+		Log.debug("Communication", "constructor", "Connecting to the server...");
+
+		// Create a new ID generator
+		idGenerator = new IDGenerator();
+
+		// Connect to the server
+		try {
+			// Get the RMI registry
+			Registry reg = LocateRegistry.getRegistry(serverAddress, serverPort);
+			server = (ServerInterface) reg.lookup("Server");
+			// Mark connection as active
+			isActive = true;
+			Log.debug("Communication", "constructor", "Connected to the server");
+		} catch (AccessException e) {
+			Log.error("Communication", "constructor", "Could not access the server registry", e);
+		} catch (RemoteException e) {
+			Log.error("Communication", "constructor", "Could not find the RMI registry on the server", e);
+		} catch (NotBoundException e) {
+			Log.error("Communication", "constructor", "Could not bind to the provided RMI address", e);
+		}
+	}
+
+	/**
+	 * Check if communication has been established with the server.
+	 * 
+	 * @return True if connection has been establish with the server.
+	 */
+	public boolean isActive() {
+		return isActive;
+	}
 
 	/**
 	 * Issue the command to the server. The response, if any,
@@ -34,37 +87,55 @@ public class Communication {
 	 * @param args
 	 *            A list of arguments, if any, associated with the command.
 	 * @return True if the operation executed successfully on the server.
+	 * @throws RemoteException
 	 */
-	public boolean sendOperation(Command command, List<String> args) {
+	public boolean sendOperation(Command command, List<String> args) throws RemoteException {
+		// Get the next globally unique RPC ID
+		long RPCID = server.getNextRPCID(idGenerator.getCurrentInSequence("RPC"));
+
 		// Construct an RPC Message request object
 		RPCMessage request = new RPCMessage(RPCMessage.MessageType.REQUEST,
-				IDGenerator.getNextInSequence("transaction"), IDGenerator.getNextInSequence("RPC"),
-				IDGenerator.getNextInSequence("request"), command.getID(), CSVUtility.toCSV(args), Status.UNSET);
+				idGenerator.getNextInSequence("transaction"), RPCID, idGenerator.getNextInSequence("request"),
+				command.getID(), CSVUtility.toCSV(args), Status.UNSET);
+
+		// Show the request message for understanding the "behind-the-scenes"
+		UserInput.getInstance().display("\t" + request.toString());
 
 		// Call the corresponding remote functions
 		if (command.equals(Command.Connect)) {
 			// Connect to the server
-			response = Server.getInstance().connect(request);
+			response = server.connect(request);
 
 		} else if (command.equals(Command.Disconnect)) {
 			// Disconnect from the server
-			response = Server.getInstance().disconnect(request);
+			response = server.disconnect(request);
 
 		} else if (command.equals(Command.Deposit)) {
 			// Send the message
-			response = Server.getInstance().deposit(request);
+			response = server.deposit(request);
 
 		} else if (command.equals(Command.Retrieve)) {
 			// Get all messages
-			response = Server.getInstance().retrieve(request);
+			response = server.retrieve(request);
 
 		} else if (command.equals(Command.Inquire)) {
 			// Check if a user is online
-			response = Server.getInstance().inquire(request);
+			response = server.inquire(request);
 		}
 
-		// Was the operation successful?
-		return isOperationSuccessful();
+		// Show the response message for understanding the "behind-the-scenes"
+		UserInput.getInstance().display("\t" + response.toString());
+		
+		// Validate response
+		if (response.validateResponse(request)) {
+
+			// Was the operation successful?
+			return isOperationSuccessful();
+
+		} else {
+			// No, not valid
+			return false;
+		}
 	}
 
 	// Check for a success status in the response
@@ -97,7 +168,13 @@ public class Communication {
 	public Long getClientID() {
 		List<String> responseData = CSVUtility.fromCSV(response.getCsv_data());
 		if (responseData != null)
-			return Long.parseLong(responseData.get(0));
+			try {
+				return Long.parseLong(responseData.get(0));
+			} catch (NumberFormatException e) {
+				// Invalid IDs
+				Log.error("Communication", "getClientID", "Argument is not a number", e);
+				return IDGenerator.NULL_ID;
+			}
 		else
 			return IDGenerator.NULL_ID;
 	}
@@ -113,7 +190,6 @@ public class Communication {
 		// Get the CSV data
 		String responseData = response.getCsv_data();
 
-		// TODO unmarshall
 		Object unmarshalledData = SimpleMarshaller.unmarshallString(responseData);
 		if (unmarshalledData != null)
 			return (List<ChatMessage>) unmarshalledData;
@@ -129,5 +205,18 @@ public class Communication {
 	 */
 	public boolean isUserOnline() {
 		return Boolean.parseBoolean(response.getCsv_data());
+	}
+
+	/**
+	 * Check if the response if valid as per the expected procedure.
+	 * Relay function for RPCMessage's validateProcedure() command,
+	 * that is not visible to the ChatClient.
+	 * 
+	 * @param command
+	 *            The expected operation.
+	 * @return True if the response is marked for the expected operation.
+	 */
+	public boolean isResponseValidAsPerProcedure(Command command) {
+		return response.validateProcedure(command);
 	}
 }
